@@ -1,0 +1,1 @@
+A tutorial for using Mockit. Unlike the book, here Jupiter and Java 11 wil be used
