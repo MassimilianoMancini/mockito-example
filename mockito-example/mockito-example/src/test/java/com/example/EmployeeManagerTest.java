@@ -3,6 +3,7 @@ package com.example;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -70,5 +71,15 @@ class EmployeeManagerTest {
 		assertThat(idCaptor.getAllValues()).containsExactly("1", "2");
 		assertThat(amountCaptor.getAllValues()).containsExactly(1000.0, 2000.0);
 		verifyNoMoreInteractions(bankService);
+	}
+	
+	@Test
+	void testEmployeeSetPaidIsCalledAfterPaying() {
+		Employee employee = spy(new Employee("1", 1000));
+		when(employeeRepository.findAll()).thenReturn(asList(employee));
+		assertThat(employeeManager.payEmployees()).isEqualTo(1);
+		InOrder inOrder = inOrder(bankService, employee);
+		inOrder.verify(bankService).pay("1", 1000);
+		inOrder.verify(employee).setPaid(true);
 	}
 }
