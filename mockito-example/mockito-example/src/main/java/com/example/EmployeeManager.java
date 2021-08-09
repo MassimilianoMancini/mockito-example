@@ -1,15 +1,23 @@
 package com.example;
 
+import java.util.List;
+
 public class EmployeeManager {
 	
 	private EmployeeRepository employeeRepository;
+	private BankService bankService;
 
-	public EmployeeManager(EmployeeRepository employeeRepository) {
+	public EmployeeManager(EmployeeRepository employeeRepository, BankService bankService) {
 		this.employeeRepository = employeeRepository;
+		this.bankService = bankService;
 	}
 
 	public int payEmployees() {
-		return employeeRepository.findAll().size();
+		List<Employee> employees = employeeRepository.findAll();
+		for (Employee employee : employees) {
+			bankService.pay(employee.getId(), employee.getSalary());
+		}
+		return employees.size();
 	}
 
 }
