@@ -1,6 +1,7 @@
 package com.example;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -8,6 +9,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.anyDouble;
+import static org.mockito.Mockito.argThat;
 import static java.util.Collections.emptyList;
 import static java.util.Arrays.asList;
 
@@ -81,5 +85,39 @@ class EmployeeManagerTest {
 		InOrder inOrder = inOrder(bankService, employee);
 		inOrder.verify(bankService).pay("1", 1000);
 		inOrder.verify(employee).setPaid(true);
+	}
+	
+	@Test
+	void testPayEmployeesWhenBankServiceThrowsException() {
+		Employee employee = spy(new Employee("1", 1000));
+		when(employeeRepository.findAll()).thenReturn(asList(employee));
+		doThrow(new RuntimeException()).when(bankService).pay(anyString(), anyDouble());
+		// number of payments must be 0
+		assertThat(employeeManager.payEmployees()).isZero();
+		// make sure that Employee.paid is updated accordingly
+		verify(employee).setPaid(false);
+	}
+	
+	@Test
+	void testOtherEmployeesArePaidWhenBankServiceThrowsException() {
+		Employee notToBePaid = spy(new Employee("1", 1000));
+		Employee toBePaid = spy(new Employee("2", 2000));
+		when(employeeRepository.findAll()).thenReturn(asList(notToBePaid, toBePaid));
+		doThrow(new RuntimeException()).doNothing().when(bankService).pay(anyString(), anyDouble());
+		assertThat(employeeManager.payEmployees()).isEqualTo(1);
+		verify(notToBePaid).setPaid(false);
+		verify(toBePaid).setPaid(true);	
+	}
+	
+	@Test
+	void testOtherEmployeesArePaidWhenBankServiceThrowsExceptionArgumentMatcher() {
+		Employee notToBePaid = spy(new Employee("1", 1000));
+		Employee toBePaid = spy(new Employee("2", 2000));
+		when(employeeRepository.findAll()).thenReturn(asList(notToBePaid, toBePaid));
+		doThrow(new RuntimeException())
+			.when(bankService).pay(argThat(s->s.equals("1")), anyDouble());
+		assertThat(employeeManager.payEmployees()).isEqualTo(1);
+		verify(notToBePaid).setPaid(false);
+		verify(toBePaid).setPaid(true);	
 	}
 }
